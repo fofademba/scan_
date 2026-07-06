@@ -1,205 +1,373 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ScanTime - Gestion des heures d'arrivée et départ</title>
-    <!-- Font Awesome pour les icônes -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        /* --- RESET & BASE --- */
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #f4f7fc; color: #1f2d3d; line-height: 1.6; }
-        a { text-decoration: none; color: inherit; }
-        
-        /* --- NAVBAR --- */
-        nav { background: #ffffff; padding: 1rem 5%; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
-        nav .logo { font-size: 1.5rem; font-weight: 700; color: #2563eb; }
-        nav ul { display: flex; gap: 2rem; list-style: none; }
-        nav ul a { font-weight: 500; color: #4b5563; transition: 0.3s; }
-        nav ul a:hover { color: #2563eb; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScanTime — Le pointage qui tient la promesse du badge</title>
+<meta name="description" content="Système de pointage par badge (code-barres/QR) pour entreprises maliennes. Auto-hébergé, fonctionne même sans connexion internet stable.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root{
+  --ink:#0a0f1a;
+  --ink-2:#111a2b;
+  --ink-3:#182338;
+  --line:#26344d;
+  --gold:#e3a72b;
+  --gold-soft:#f2c869;
+  --green:#2fa860;
+  --red:#d1584f;
+  --text:#eef1f6;
+  --muted:#8b97ad;
+  --display:'Space Grotesk',sans-serif;
+  --body:'Inter',sans-serif;
+  --mono:'IBM Plex Mono',monospace;
+  --radius:14px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:var(--ink);
+  color:var(--text);
+  font-family:var(--body);
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:inherit}
+img,svg{display:block;max-width:100%}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.wrap{max-width:1120px;margin:0 auto;padding:0 6vw}
+h1,h2,h3{font-family:var(--display);letter-spacing:-.01em;color:#fff}
+.eyebrow{
+  font-family:var(--mono);font-size:.78rem;letter-spacing:.12em;
+  color:var(--gold-soft);text-transform:uppercase;
+}
 
-        /* --- HERO SECTION --- */
-        .hero { padding: 4rem 5%; text-align: center; background: linear-gradient(135deg, #eff6ff, #ffffff); }
-        .hero h1 { font-size: 2.8rem; margin-bottom: 1rem; color: #1e293b; }
-        .hero h1 span { color: #2563eb; }
-        .hero p { font-size: 1.2rem; color: #475569; max-width: 700px; margin: 0 auto 2rem auto; }
-        .cta-btn { background: #2563eb; color: white; padding: 0.8rem 2rem; border-radius: 50px; font-weight: 600; display: inline-block; transition: 0.3s; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.3); }
-        .cta-btn:hover { background: #1d4ed8; transform: translateY(-2px); }
+/* ── NAV ─────────────────────────────────────────────── */
+nav{
+  position:sticky;top:0;z-index:50;
+  background:rgba(10,15,26,.85);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);
+}
+nav .wrap{display:flex;align-items:center;justify-content:space-between;padding:1rem 6vw}
+.logo{display:flex;align-items:center;gap:.6rem;font-family:var(--display);font-weight:700;font-size:1.15rem}
+.logo .bars{display:flex;align-items:flex-end;gap:2px;height:18px}
+.logo .bars span{width:3px;background:var(--gold);display:block}
+nav ul{display:flex;gap:2.2rem;list-style:none}
+nav ul a{font-size:.92rem;color:var(--muted);text-decoration:none;transition:.2s}
+nav ul a:hover{color:#fff}
+.btn{
+  display:inline-flex;align-items:center;gap:.5rem;
+  font-family:var(--body);font-weight:600;font-size:.9rem;
+  padding:.7rem 1.4rem;border-radius:8px;text-decoration:none;
+  border:1px solid var(--gold);transition:.2s;
+}
+.btn-fill{background:var(--gold);color:#1a1206}
+.btn-fill:hover{background:var(--gold-soft)}
+.btn-ghost{color:var(--text);border-color:var(--line)}
+.btn-ghost:hover{border-color:var(--gold-soft);color:var(--gold-soft)}
+@media(max-width:840px){ nav ul{display:none} }
 
-        /* --- HOW IT WORKS --- */
-        .steps { padding: 4rem 5%; background: #fff; }
-        .steps h2 { text-align: center; font-size: 2rem; margin-bottom: 3rem; color: #1e293b; }
-        .steps-container { display: flex; justify-content: center; gap: 3rem; flex-wrap: wrap; }
-        .step { background: #f8fafc; padding: 2rem; border-radius: 12px; flex: 1; min-width: 250px; max-width: 350px; text-align: center; border: 1px solid #e2e8f0; }
-        .step i { font-size: 2.5rem; color: #2563eb; margin-bottom: 1rem; }
-        .step h3 { margin-bottom: 0.5rem; }
-        .step p { color: #64748b; font-size: 0.95rem; }
+/* ── HERO ────────────────────────────────────────────── */
+.hero{padding:6rem 0 4rem;position:relative;overflow:hidden}
+.hero::before{
+  content:"";position:absolute;inset:0;
+  background:radial-gradient(circle at 15% 20%, rgba(227,167,43,.10), transparent 45%);
+  pointer-events:none;
+}
+.hero .wrap{display:grid;grid-template-columns:1.05fr .95fr;gap:3.5rem;align-items:center}
+@media(max-width:900px){ .hero .wrap{grid-template-columns:1fr} }
+.hero h1{font-size:clamp(2.1rem,4.2vw,3.15rem);line-height:1.12;margin:1rem 0 1.3rem}
+.hero h1 em{font-style:normal;color:var(--gold-soft)}
+.hero p{color:var(--muted);font-size:1.08rem;max-width:46ch;margin-bottom:2rem}
+.hero .cta-row{display:flex;gap:1rem;flex-wrap:wrap}
 
-        /* --- FEATURES (Interface RH & Rapports) --- */
-        .features { padding: 4rem 5%; background: #f1f5f9; }
-        .features h2 { text-align: center; font-size: 2rem; margin-bottom: 3rem; color: #1e293b; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; }
-        .card { background: #fff; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.04); transition: 0.3s; border-top: 4px solid #2563eb; }
-        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px rgba(0,0,0,0.05); }
-        .card h3 { margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
-        .card h3 i { color: #2563eb; font-size: 1.2rem; }
-        .card p { color: #475569; font-size: 0.95rem; }
+/* signature: animated barcode scan */
+.badge-panel{
+  background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);
+  padding:2rem;position:relative;overflow:hidden;
+}
+.badge-panel .tag{font-family:var(--mono);font-size:.75rem;color:var(--muted);margin-bottom:1.4rem;display:flex;justify-content:space-between}
+.scan-zone{position:relative;background:#fff;border-radius:8px;padding:1.6rem 1.4rem 1.2rem;overflow:hidden}
+.barcode{display:flex;align-items:stretch;height:80px;gap:2px}
+.barcode span{background:#0a0f1a;flex:0 0 auto}
+.scan-line{
+  position:absolute;left:0;right:0;height:2px;background:var(--red);
+  box-shadow:0 0 12px 2px rgba(209,88,79,.7);
+  animation:sweep 2.6s ease-in-out infinite;
+}
+@keyframes sweep{
+  0%,100%{top:8%}
+  50%{top:88%}
+}
+.code-num{font-family:var(--mono);text-align:center;color:#0a0f1a;font-size:.85rem;letter-spacing:.25em;margin-top:.7rem}
+.badge-panel .status-row{display:flex;justify-content:space-between;align-items:center;margin-top:1.2rem;font-family:var(--mono);font-size:.8rem}
+.status-row .ok{color:var(--green)}
+@media (prefers-reduced-motion: reduce){ .scan-line{animation:none;top:50%} }
 
-        /* --- PRICING (Ton modèle) --- */
-        .pricing { padding: 4rem 5%; background: #fff; text-align: center; }
-        .pricing h2 { font-size: 2rem; margin-bottom: 1.5rem; }
-        .pricing-box { background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 16px; padding: 2.5rem; max-width: 700px; margin: 0 auto; }
-        .pricing-box .highlight { font-size: 1.8rem; font-weight: 700; color: #2563eb; }
-        .pricing-box ul { list-style: none; margin: 1.5rem 0; text-align: left; display: inline-block; }
-        .pricing-box ul li { margin: 0.8rem 0; display: flex; align-items: center; gap: 0.5rem; }
-        .pricing-box ul li i { color: #22c55e; }
+/* ── SECTION SHELL ───────────────────────────────────── */
+section{padding:5rem 0}
+.section-head{max-width:640px;margin-bottom:3rem}
+.section-head h2{font-size:clamp(1.6rem,3vw,2.15rem);margin-top:.6rem}
+.section-head p{color:var(--muted);margin-top:.8rem}
 
-        /* --- VIDEO SECTION --- */
-        .video-section { padding: 4rem 5%; background: #f1f5f9; text-align: center; }
-        .video-section h2 { font-size: 2rem; margin-bottom: 2rem; }
-        .video-wrapper { max-width: 800px; margin: 0 auto; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 20px rgba(0,0,0,0.1); background: #000; }
-        .video-wrapper iframe { width: 100%; height: 450px; border: 0; }
+/* ── STEPS (vraie séquence → numérotation justifiée) ──── */
+.steps{background:var(--ink-2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.steps-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem}
+@media(max-width:840px){ .steps-grid{grid-template-columns:1fr} }
+.step{position:relative;padding-left:.2rem}
+.step .n{font-family:var(--mono);font-size:.85rem;color:var(--gold-soft);display:block;margin-bottom:.8rem}
+.step h3{font-size:1.15rem;margin-bottom:.5rem}
+.step p{color:var(--muted);font-size:.94rem}
+.step-line{height:1px;background:linear-gradient(90deg,var(--gold),transparent);margin:1.4rem 0 0;width:40%}
 
-        /* --- CONTACT & FOOTER --- */
-        .contact { padding: 4rem 5%; background: #0f172a; color: #e2e8f0; text-align: center; }
-        .contact h2 { font-size: 2rem; margin-bottom: 1.5rem; color: #fff; }
-        .contact-infos { display: flex; flex-wrap: wrap; justify-content: center; gap: 2rem; margin: 2rem 0; }
-        .contact-item { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; }
-        .contact-item i { font-size: 1.5rem; color: #60a5fa; }
-        .contact-item a { color: #94a3b8; transition: 0.3s; }
-        .contact-item a:hover { color: #60a5fa; }
-        .contact .slogan { font-style: italic; margin-top: 2rem; color: #94a3b8; font-size: 1.1rem; border-top: 1px solid #334155; padding-top: 2rem; }
+/* ── FEATURES GRID ───────────────────────────────────── */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.5rem}
+.card{
+  background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);
+  padding:1.8rem;transition:.2s;
+}
+.card:hover{border-color:var(--gold-soft);transform:translateY(-3px)}
+.card i{color:var(--gold-soft);font-size:1.3rem;margin-bottom:1rem;display:block}
+.card h3{font-size:1.05rem;margin-bottom:.5rem;font-family:var(--body);font-weight:600}
+.card p{color:var(--muted);font-size:.92rem}
+.card .soon{
+  display:inline-block;margin-top:.8rem;font-family:var(--mono);font-size:.7rem;
+  color:var(--muted);border:1px solid var(--line);padding:.15rem .5rem;border-radius:4px;
+}
 
-        /* --- RESPONSIVE --- */
-        @media (max-width: 768px) {
-            .hero h1 { font-size: 2rem; }
-            nav ul { display: none; /* Pour simplifier, on cache le menu sur mobile, ou on le transforme en burger. Ici on garde le flex simple */ }
-            nav { flex-direction: column; gap: 1rem; }
-            .video-wrapper iframe { height: 250px; }
-        }
-    </style>
+/* ── OFFLINE / RELIABILITY BAND ──────────────────────── */
+.reliability{background:var(--ink-3);border-radius:var(--radius);padding:2.5rem;display:grid;grid-template-columns:1fr 1fr;gap:2.5rem;align-items:center}
+@media(max-width:840px){ .reliability{grid-template-columns:1fr} }
+.reliability h3{font-size:1.4rem;margin-bottom:.8rem}
+.reliability p{color:var(--muted)}
+.pill-list{display:flex;flex-direction:column;gap:.9rem;font-family:var(--mono);font-size:.85rem}
+.pill-list li{display:flex;gap:.6rem;align-items:flex-start;list-style:none}
+.pill-list i{color:var(--green);margin-top:.2rem}
+
+/* ── PRICING ─────────────────────────────────────────── */
+.pricing-box{
+  background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);
+  padding:2.6rem;max-width:640px;
+}
+.pricing-box .eyebrow{margin-bottom:.6rem}
+.pricing-box h3{font-size:1.8rem;color:var(--gold-soft);margin-bottom:.3rem}
+.pricing-box ul{margin:1.4rem 0;list-style:none}
+.pricing-box ul li{display:flex;gap:.7rem;margin:.7rem 0;font-size:.94rem;color:var(--text)}
+.pricing-box ul li i{color:var(--green);margin-top:.25rem}
+
+/* ── CONTACT ─────────────────────────────────────────── */
+.contact{background:var(--ink-2);border-top:1px solid var(--line)}
+.contact-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.6rem;margin-top:2rem}
+.contact-item{display:flex;flex-direction:column;gap:.4rem}
+.contact-item .label{font-family:var(--mono);font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.contact-item a,.contact-item span{font-size:.95rem}
+.contact-item a{text-decoration:none;color:var(--gold-soft)}
+.contact-item a:hover{color:var(--gold)}
+footer{padding:2rem 0;border-top:1px solid var(--line);text-align:center;color:var(--muted);font-size:.85rem}
+footer i{color:var(--gold-soft)}
+</style>
 </head>
 <body>
 
-    <!-- Navigation -->
-    <nav>
-        <div class="logo"><i class="fas fa-qrcode"></i> ScanTime</div>
-        <ul>
-            <li><a href="#fonctionnement">Fonctionnement</a></li>
-            <li><a href="#features">Tableau de bord</a></li>
-            <li><a href="#tarifs">Tarifs</a></li>
-            <li><a href="#contact">Contact</a></li>
-        </ul>
-    </nav>
+<nav>
+  <div class="wrap">
+    <div class="logo">
+      <span class="bars" aria-hidden="true">
+        <span style="height:8px"></span><span style="height:16px"></span><span style="height:6px"></span>
+        <span style="height:14px"></span><span style="height:18px"></span><span style="height:9px"></span>
+      </span>
+      ScanTime
+    </div>
+    <ul>
+      <li><a href="#fonctionnement">Fonctionnement</a></li>
+      <li><a href="#dashboard">Tableau de bord</a></li>
+      <li><a href="#fiabilite">Fiabilité</a></li>
+      <li><a href="#tarifs">Tarifs</a></li>
+    </ul>
+    <a href="#contact" class="btn btn-fill">Demander une démo</a>
+  </div>
+</nav>
 
-    <!-- Hero -->
-    <section class="hero" id="accueil">
-        <h1>Gérez les heures de vos employés <br><span>en un seul scan</span></h1>
-        <p>Chaque employé scanne son badge (QR Code ou code-barres) à l'accueil. L'heure d'arrivée et de départ est enregistrée instantanément sur le poste du RH.</p>
-        <a href="#contact" class="cta-btn">Demander une démo</a>
-    </section>
+<section class="hero">
+  <div class="wrap">
+    <div>
+      <span class="eyebrow">Pointage par badge · Mali</span>
+      <h1>Le pointage qui tient <em>la promesse</em> du badge.</h1>
+      <p>Vos employés scannent leur badge à l'arrivée et au départ. L'heure est enregistrée directement sur votre serveur — même quand la connexion coupe. Le RH consulte, sans matériel propriétaire à acheter.</p>
+      <div class="cta-row">
+        <a href="#contact" class="btn btn-fill"><i class="fas fa-calendar-check"></i> Demander une démo</a>
+        <a href="#fonctionnement" class="btn btn-ghost"><i class="fas fa-play"></i> Voir comment ça marche</a>
+      </div>
+    </div>
 
-    <!-- Comment ça marche -->
-    <section class="steps" id="fonctionnement">
-        <h2>Comment ça fonctionne ?</h2>
-        <div class="steps-container">
-            <div class="step">
-                <i class="fas fa-id-card"></i>
-                <h3>1. L'employé scanne</h3>
-                <p>L'employé présente son badge personnel contenant un QR Code ou code-barres au scanner installé à l'accueil.</p>
-            </div>
-            <div class="step">
-                <i class="fas fa-desktop"></i>
-                <h3>2. Enregistrement automatique</h3>
-                <p>Le scanner, connecté à l'ordinateur du RH ou de l'accueil, enregistre immédiatement le nom, l'heure d'arrivée ou de départ.</p>
-            </div>
-            <div class="step">
-                <i class="fas fa-chart-line"></i>
-                <h3>3. Le RH consulte et gère</h3>
-                <p>Le responsable accède à son tableau de bord sécurisé pour suivre les heures, les retards et gérer la base de données des employés.</p>
-            </div>
+    <div class="badge-panel">
+      <div class="tag"><span>BADGE-0417</span><span>CODE128</span></div>
+      <div class="scan-zone">
+        <div class="scan-line" aria-hidden="true"></div>
+        <div class="barcode" aria-hidden="true">
+          <span style="width:3px"></span><span style="width:1px"></span><span style="width:5px"></span>
+          <span style="width:2px"></span><span style="width:1px"></span><span style="width:4px"></span>
+          <span style="width:1px"></span><span style="width:3px"></span><span style="width:2px"></span>
+          <span style="width:6px"></span><span style="width:1px"></span><span style="width:2px"></span>
+          <span style="width:4px"></span><span style="width:1px"></span><span style="width:3px"></span>
+          <span style="width:2px"></span><span style="width:5px"></span><span style="width:1px"></span>
+          <span style="width:2px"></span><span style="width:3px"></span><span style="width:1px"></span>
+          <span style="width:4px"></span><span style="width:2px"></span><span style="width:1px"></span>
         </div>
-    </section>
+        <div class="code-num">417 293</div>
+      </div>
+      <div class="status-row">
+        <span class="ok"><i class="fas fa-check-circle"></i> Arrivée enregistrée — 08:02</span>
+        <span>20h de fenêtre</span>
+      </div>
+    </div>
+  </div>
+</section>
 
-    <!-- Tableau de bord et fonctionnalités -->
-    <section class="features" id="features">
-        <h2>Une interface RH complète</h2>
-        <div class="grid">
-            <div class="card">
-                <h3><i class="fas fa-users-cog"></i> Gestion des employés</h3>
-                <p>Le RH peut <strong>ajouter</strong>, <strong>supprimer</strong> ou <strong>modifier</strong> les données de chaque employé directement depuis son espace.</p>
-            </div>
-            <div class="card">
-                <h3><i class="fas fa-file-alt"></i> Rapports exportables</h3>
-                <p>Générez des rapports détaillés (heures, retards, départs anticipés) et exportez-les en <strong>PDF</strong> ou <strong>Word</strong> en un clic.</p>
-            </div>
-            <div class="card">
-                <h3><i class="fas fa-cloud-upload-alt"></i> Mises à jour incluses</h3>
-                <p>L'entreprise bénéficie de toutes les mises à jour du système. Nous proposons également une <strong>personnalisation</strong> sur demande pour vos besoins spécifiques.</p>
-            </div>
-        </div>
-    </section>
+<section class="steps" id="fonctionnement">
+  <div class="wrap">
+    <div class="steps-grid">
+      <div class="step">
+        <span class="n">01 · À l'accueil</span>
+        <h3>L'employé scanne son badge</h3>
+        <p>Code-barres imprimé, lu par une douchette USB standard branchée sur le poste d'accueil. Aucun terminal spécifique à acheter.</p>
+        <div class="step-line"></div>
+      </div>
+      <div class="step">
+        <span class="n">02 · Instantané</span>
+        <h3>L'arrivée ou le départ est posé</h3>
+        <p>Le système détecte automatiquement s'il s'agit d'une arrivée ou d'un départ, et bloque les doublons de scan sur une même fenêtre de 20h.</p>
+        <div class="step-line"></div>
+      </div>
+      <div class="step">
+        <span class="n">03 · Depuis n'importe où</span>
+        <h3>Le RH consulte son tableau de bord</h3>
+        <p>Présences du jour, historique par employé, rapport de ponctualité — accessible depuis un navigateur, sans logiciel à installer côté RH.</p>
+        <div class="step-line"></div>
+      </div>
+    </div>
+  </div>
+</section>
 
-    <!-- Tarification (Ton modèle) -->
-    <section class="pricing" id="tarifs">
-        <h2>Une tarification flexible</h2>
-        <div class="pricing-box">
-            <p style="color: #64748b; font-weight: 600; margin-bottom: 0.5rem;">Aucun achat de matériel requis</p>
-            <div class="highlight">ScanService</div>
-            <p style="margin-bottom: 1rem;">Payez uniquement selon votre utilisation réelle</p>
-            <ul>
-                <li><i class="fas fa-check-circle"></i> Prix mensuel basé sur le <strong>nombre d'employés enregistrés par jour</strong>.</li>
-                <li><i class="fas fa-check-circle"></i> Le scanner est fourni et installé par nos soins.</li>
-                <li><i class="fas fa-check-circle"></i> Accès à l'interface RH et à l'historique complet.</li>
-                <li><i class="fas fa-check-circle"></i> Support technique et mises à jour incluses.</li>
-            </ul>
-            <a href="#contact" class="cta-btn" style="margin-top: 1rem;">Obtenir un devis personnalisé</a>
-        </div>
-    </section>
+<section id="dashboard">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Espace RH</span>
+      <h2>Une interface pensée pour le suivi quotidien, pas pour la démo</h2>
+      <p>Chaque fonctionnalité correspond à un besoin réel de gestion RH sur le terrain, pas à une liste de cases à cocher.</p>
+    </div>
+    <div class="grid">
+      <div class="card">
+        <i class="fas fa-users"></i>
+        <h3>Gestion des employés</h3>
+        <p>Ajout en quelques secondes : le badge (code-barres) est généré et prêt à imprimer immédiatement.</p>
+      </div>
+      <div class="card">
+        <i class="fas fa-id-card-clip"></i>
+        <h3>Fiche employé détaillée</h3>
+        <p>Un clic sur un nom ouvre son historique complet de pointages et son badge, sans changer de page.</p>
+      </div>
+      <div class="card">
+        <i class="fas fa-chart-line"></i>
+        <h3>Rapport de ponctualité</h3>
+        <p>Retards et départs anticipés calculés automatiquement par rapport aux horaires officiels de l'entreprise.</p>
+      </div>
+      <div class="card">
+        <i class="fas fa-building"></i>
+        <h3>Multi-entreprise</h3>
+        <p>Chaque RH ne voit que les employés de sa propre entreprise. Un administrateur supervise l'ensemble.</p>
+      </div>
+      <div class="card">
+        <i class="fas fa-file-export"></i>
+        <h3>Export pour la paie</h3>
+        <p>Export CSV des pointages du mois, prêt à intégrer dans votre outil de paie.</p>
+        <span class="soon">sur la feuille de route</span>
+      </div>
+      <div class="card">
+        <i class="fas fa-bell"></i>
+        <h3>Alertes retards</h3>
+        <p>Notification au RH en cas de retard répété d'un employé sur la semaine.</p>
+        <span class="soon">sur la feuille de route</span>
+      </div>
+    </div>
+  </div>
+</section>
 
-    <!-- Section Vidéo de démonstration -->
-    <section class="video-section" id="video">
-        <h2>Voir le système en action</h2>
-        <div class="video-wrapper">
-            <!-- Remplace le lien src ci-dessous par l'URL d'embed de ta vidéo YouTube ou Vimeo -->
-            <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="Démonstration ScanTime" allowfullscreen></iframe>
-        </div>
-    </section>
+<section id="fiabilite">
+  <div class="wrap">
+    <div class="reliability">
+      <div>
+        <span class="eyebrow">Conçu pour le terrain</span>
+        <h3>La connexion coupe. Le pointage, non.</h3>
+        <p>Une coupure réseau à l'accueil ne doit jamais empêcher un employé de pointer. Le poste de scan met les pointages en attente localement et les envoie dès que la connexion revient — sans intervention.</p>
+      </div>
+      <ul class="pill-list">
+        <li><i class="fas fa-check"></i> File d'attente locale si le serveur est injoignable</li>
+        <li><i class="fas fa-check"></i> Renvoi automatique dès le retour de la connexion</li>
+        <li><i class="fas fa-check"></i> Hébergement sur votre propre serveur, données non partagées</li>
+        <li><i class="fas fa-check"></i> Fonctionne avec une simple douchette USB, sans app dédiée</li>
+      </ul>
+    </div>
+  </div>
+</section>
 
-    <!-- Contact -->
-    <section class="contact" id="contact">
-        <h2>Contactez-nous</h2>
-        <p style="color: #94a3b8; margin-bottom: 1rem;">Une question ? Un projet de personnalisation ? Échangeons ensemble.</p>
-        
-        <div class="contact-infos">
-            <div class="contact-item">
-                <i class="fas fa-user"></i>
-                <span>Demba FOFANA</span>
-            </div>
-            <div class="contact-item">
-                <i class="fas fa-phone-alt"></i>
-                <span>0695822021 / 84411044</span>
-            </div>
-            <div class="contact-item">
-                <i class="fas fa-envelope"></i>
-                <a href="mailto:demba.fofana@proton.me">demba.fofana@proton.me</a><br>
-                <a href="mailto:demba.fof6@gmail.com" style="font-size: 0.9rem;">demba.fof6@gmail.com</a>
-            </div>
-            <div class="contact-item">
-                <i class="fab fa-linkedin"></i>
-                <a href="https://www.linkedin.com/in/demba-fofana-b6373338b/" target="_blank">Mon LinkedIn</a>
-            </div>
-            <div class="contact-item">
-                <i class="fab fa-github"></i>
-                <a href="https://github.com/fofademba" target="_blank">Mon GitHub</a>
-            </div>
-        </div>
+<section id="tarifs">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Tarification</span>
+      <h2>Pas de matériel à acheter, pas d'engagement long</h2>
+    </div>
+    <div class="pricing-box">
+      <span class="eyebrow">Formule</span>
+      <h3>ScanService</h3>
+      <p style="color:var(--muted)">Payez selon votre usage réel, pas selon une licence figée.</p>
+      <ul>
+        <li><i class="fas fa-check"></i> Tarif mensuel basé sur le nombre d'employés actifs</li>
+        <li><i class="fas fa-check"></i> Scanner fourni, configuré et installé sur place</li>
+        <li><i class="fas fa-check"></i> Accès complet à l'espace RH et à l'historique</li>
+        <li><i class="fas fa-check"></i> Support technique et mises à jour inclus</li>
+      </ul>
+      <a href="#contact" class="btn btn-fill">Obtenir un devis personnalisé</a>
+    </div>
+  </div>
+</section>
 
-        <div class="slogan">
-            <i class="fas fa-handshake"></i> "Ensemble, soyons des acteurs majeurs au développement numérique de notre pays !"
-        </div>
-    </section>
+<section class="contact" id="contact">
+  <div class="wrap">
+    <span class="eyebrow">Contact</span>
+    <h2>Discutons de votre mise en place</h2>
+    <p style="color:var(--muted);margin-top:.6rem;max-width:50ch">Une question, un besoin spécifique pour votre entreprise ? Écrivez-moi directement.</p>
+    <div class="contact-grid">
+      <div class="contact-item">
+        <span class="label">Contact</span>
+        <span>Demba Fofana</span>
+      </div>
+      <div class="contact-item">
+        <span class="label">Téléphone</span>
+        <span>+223 69 58 22 021 · 84 41 10 44</span>
+      </div>
+      <div class="contact-item">
+        <span class="label">Email</span>
+        <a href="mailto:demba.fofana@proton.me">demba.fofana@proton.me</a>
+        <a href="mailto:demba.fof6@gmail.com">demba.fof6@gmail.com</a>
+      </div>
+      <div class="contact-item">
+        <span class="label">En ligne</span>
+        <a href="https://www.linkedin.com/in/demba-fofana-b6373338b/" target="_blank" rel="noopener">LinkedIn</a>
+        <a href="https://github.com/fofademba" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <i class="fas fa-handshake"></i> ScanTime — conçu et développé au Mali.
+  </div>
+</footer>
 
 </body>
 </html>
